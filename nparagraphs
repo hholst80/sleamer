@@ -1,0 +1,6 @@
+#!/usr/bin/env perl
+
+local $/ = '';  # enable paragraph mode
+1 while <>;
+my $count = $.;
+print($count);

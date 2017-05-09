@@ -1,0 +1,17 @@
+# Title page
+# Default output is handled by **sent**
+# @text
+This is the stuff we want on the title page.
+
+# This is never shown up but will display verbatim
+# on the presentation screen.
+# @image
+data/sys_Atari2600.jpg
+
+# Slide 3
+# @graphviz
+digraph G {Hello->World}
+
+# Slide 4
+# @movie
+data/openaigym.video.0.61050.video000064.mp4

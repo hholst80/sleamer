@@ -1,0 +1,70 @@
+#!/bin/bash
+# et:ts=2:sw=2
+
+function npp {
+  ./nparagraphs < $1
+}
+
+function pp {
+  ./paragraphs.py $1
+}
+
+function slidetype {
+  ./slidetype.py $1
+}
+
+N=$(npp "$1")
+k=1
+
+echo Number of slides: $N
+
+if test $N -eq 0; then
+  echo "Empty presentation." > /dev/stderr
+  exit 0
+fi
+
+while :
+do
+  clear
+  st=$(slidetype $k < $1)
+  pp $k < $1
+
+  if test ! -z $!; then
+    kill $! >& /dev/null
+    wait $! >& /dev/null
+  fi
+
+  case $st in
+    text) pp $k < $1 | ./remove-comments | sent >& /dev/null &
+          ;;
+    image) pp $k < $1 | ./remove-comments | sxiv -b -f -i >& /dev/null &
+          ;;
+    movie) DISPLAY=:0 ffmpeg -i $(pp $k < $1 | ./remove-comments) -f xv display
+          # we dont bg ffmpeg because it has interactive controls
+          # TODO: auto increase slide number?
+          ;;
+    graph*|dot) pp $k < $1 | ./remove-comments | dot -Tx11 >& /dev/null &
+          ;;
+  esac
+
+  read -s -n1 key
+  case $key in
+    j) # echo "next slide"
+       if test $k -lt $N; then
+         k=$(expr $k + 1)
+       fi
+       ;;
+    k) # echo "prev slide"
+       if test $k -gt 1; then
+         k=$(expr $k - 1)
+       fi
+       ;;
+    q)
+      if test ! -z $!; then
+        kill $! >& /dev/null
+        wait $! >& /dev/null
+      fi
+      exit 0
+      ;;
+  esac
+done
