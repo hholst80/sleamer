@@ -1,0 +1,9 @@
+#!/bin/bash
+wid=$1
+output=$(mktemp --suffix=.png)
+plugdir=$(dirname $(readlink -f $0))
+trap "rm $output" SIGHUP SIGINT SIGTERM
+dot -Tpng -Gdpi=500 > $output
+$plugdir/sxiv $wid <<EOF
+$output
+EOF
