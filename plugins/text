@@ -1,0 +1,16 @@
+#!/bin/bash
+wid=$1
+text="$(cat)"
+output=$(mktemp --suffix=.png)
+plugdir=$(dirname $(readlink -f $0))
+trap "rm $output" SIGHUP SIGINT SIGTERM
+convert -background white \
+        -fill black       \
+        -font "Ubuntu"    \
+        -pointsize 72     \
+        label:"$text"     \
+        $output
+# -gravity center
+$plugdir/sxiv $wid <<EOF
+$output
+EOF

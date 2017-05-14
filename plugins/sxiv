@@ -1,0 +1,6 @@
+#!/bin/bash
+filename=$(cat)
+window_id=$1
+geometry=$(xwininfo -id $window_id | awk '/Width:/ { WIDTH=$2 } /Height:/ {HEIGHT=$2} END { print WIDTH "x" HEIGHT"+0+0" }')
+#sxiv -sf -b -g $geometry -e $window_id $filename
+sxiv -b -g $geometry -e $window_id $filename

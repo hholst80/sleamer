@@ -1,0 +1,3 @@
+#!/bin/bash
+filename=$(cat)
+mplayer -wid $1 $filename

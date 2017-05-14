@@ -1,0 +1,14 @@
+#!/bin/bash
+wid=$1
+tempdir=$(mktemp -d)
+plugdir=$(dirname $(readlink -f $0))
+cd $tempdir
+trap "rm -rf $tempdir" SIGHUP SIGINT SIGTERM
+set -e
+pandoc -s -t beamer > output.tex
+latex output.tex >& /dev/null
+#dvipng -T tight -D 1000 output.dvi -o output.png
+dvipng -D 1000 output.dvi -o output.png
+$plugdir/sxiv $wid <<EOF
+output.png
+EOF
