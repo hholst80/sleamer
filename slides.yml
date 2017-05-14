@@ -1,0 +1,23 @@
+author: Henrik Holst
+email: hholst80@gmail.com
+---
+label: Title page
+text: This is the stuff we want on the title page.
+---
+image: data/sys_Atari2600.jpg
+note: |
+ This is never shown up but will display verbatim
+ on the presentation screen.
+---
+# Slide 3
+dot: digraph G {Hello->World}
+---
+# Slide 4
+mplayer: data/openaigym.video.0.61050.video000064.mp4
+---
+# Slide 5
+pandoc: |
+ * A bullet point list
+ $$
+ F(x) = \int_a^x f(s) \mathrm{d}s
+ $$
