@@ -1,70 +1,37 @@
-#!/bin/bash
-# et:ts=2:sw=2
+# vi: ft=python et ts=4 sw=4
 
-function npp {
-  ./nparagraphs < $1
-}
+import yaml
+import argparse
 
-function pp {
-  ./paragraphs.py $1
-}
+class SlideDec:
+    def __init__(self, filename=None):
+        self.page = None
+        self._documents = []
+        if filename is not None:
+            self.load(filename)
 
-function slidetype {
-  ./slidetype.py $1
-}
+    def load(self, filename):
+        with open(filename, 'r') as stream:
+            documents = yaml.load_all(stream)
+            self._documents = [ doc for doc in documents ]
+            if self.page is None:
+                self.page = 0
 
-N=$(npp "$1")
-k=1
+    def __len__(self):
+        return len(self._documents)
 
-echo Number of slides: $N
+    def document(self, page=None):
+        if page is None:
+            page = self.page()
+        slide = self.slide(page)
 
-if test $N -eq 0; then
-  echo "Empty presentation." > /dev/stderr
-  exit 0
-fi
 
-while :
-do
-  clear
-  st=$(slidetype $k < $1)
-  pp $k < $1
 
-  if test ! -z $!; then
-    kill $! >& /dev/null
-    wait $! >& /dev/null
-  fi
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('slides')
+    args = parser.parse_args()
+    slides = SlideDeck(args.slides)
 
-  case $st in
-    text) pp $k < $1 | ./remove-comments | sent >& /dev/null &
-          ;;
-    image) pp $k < $1 | ./remove-comments | sxiv -b -f -i >& /dev/null &
-          ;;
-    movie) DISPLAY=:0 ffmpeg -i $(pp $k < $1 | ./remove-comments) -f xv display
-          # we dont bg ffmpeg because it has interactive controls
-          # TODO: auto increase slide number?
-          ;;
-    graph*|dot) pp $k < $1 | ./remove-comments | dot -Tx11 >& /dev/null &
-          ;;
-  esac
-
-  read -s -n1 key
-  case $key in
-    j) # echo "next slide"
-       if test $k -lt $N; then
-         k=$(expr $k + 1)
-       fi
-       ;;
-    k) # echo "prev slide"
-       if test $k -gt 1; then
-         k=$(expr $k - 1)
-       fi
-       ;;
-    q)
-      if test ! -z $!; then
-        kill $! >& /dev/null
-        wait $! >& /dev/null
-      fi
-      exit 0
-      ;;
-  esac
-done
+if __name__ == '__main__':
+    main()
