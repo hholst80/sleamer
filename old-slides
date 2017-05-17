@@ -11,7 +11,3 @@ data/sys_Atari2600.jpg
 # Slide 3
 # @graphviz
 digraph G {Hello->World}
-
-# Slide 4
-# @movie
-data/openaigym.video.0.61050.video000064.mp4

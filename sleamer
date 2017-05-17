@@ -1,9 +1,18 @@
+#!/usr/bin/env python3
 # vi: ft=python et ts=4 sw=4
 
-import yaml
+import os
 import argparse
+import yaml
+import curses
+import threading
+#from curses.textpad import Textbox
+import subprocess
+from io import StringIO
 
-class SlideDec:
+from window import Window, display
+
+class SlideDeck:
     def __init__(self, filename=None):
         self.page = None
         self._documents = []
@@ -15,23 +24,98 @@ class SlideDec:
             documents = yaml.load_all(stream)
             self._documents = [ doc for doc in documents ]
             if self.page is None:
-                self.page = 0
+                self.page = 1
 
-    def __len__(self):
-        return len(self._documents)
+    # def __len__(self):
+    #     return len(self._documents) - 1
+
+    @property
+    def pages(self):
+        return len(self._documents) - 1
 
     def document(self, page=None):
         if page is None:
-            page = self.page()
-        slide = self.slide(page)
+            page = self.page
+        return self._documents[page]
 
+    def next(self):
+        self.page = min(self.page + 1, self.pages)
 
+    def prev(self):
+        self.page = max(self.page - 1, 1)
+
+def render_page(stdscr, page, pages, doc):
+    stdscr.addstr(str(page) + '/' + str(pages) + '\n\n', curses.color_pair(1))
+    for key, value in doc.items():
+        stdscr.addstr(key + '\n', curses.color_pair(1))
+        stdscr.addstr(value.strip() + '\n\n')
+    stdscr.refresh()
+
+RETURN = 10
+ESCAPE = 27
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('slides')
+    parser.add_argument('file')
     args = parser.parse_args()
-    slides = SlideDeck(args.slides)
+    deck = SlideDeck(args.file)
+    print('page {}/{}'.format(deck.page, deck.pages))
+    os.environ['TERM'] = 'xterm-256color'
+    stdscr = curses.initscr()
+    curses.start_color()
+    curses.noecho()
+    curses.init_pair(1, curses.COLOR_RED, curses.COLOR_WHITE)
+    mode = 'normal'
+    #textbox = curses.textpad.Textbox(stdscr)
+    window = Window(display.Display())
+    window.start()
+
+    while True:
+        stdscr.clear()
+        try:
+            render_page(stdscr, deck.page, deck.pages, deck.document())
+            if deck.page < deck.pages:
+                stdscr.addstr('\n' + 40*'-' + '\n\n')
+                next_page = deck.page + 1
+                next_document = deck.document(next_page)
+                render_page(stdscr, next_page, deck.pages, next_document)
+        except:
+            pass
+        keys = [key for key in deck.document().keys() if key not in ['notes', 'label']]
+        plugin = keys[0]
+        #render_page(stdscr, deck.page, deck.pages, plugin)
+        stdscr.addstr(plugin)
+        stdscr.refresh()
+        cmd = [os.path.join('plugins', plugin), hex(window.window.id)]
+        stdscr.addstr(" ".join(cmd))
+        stdscr.refresh()
+        proc = subprocess.Popen(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+        #render_page(str(plugin))
+        th = threading._thread.start_new(lambda: proc.communicate(deck.document()[plugin]))
+
+        stdscr.refresh()
+        ch = stdscr.getch()
+        if mode == 'insert':
+            if ch == ESCAPE:
+                mode = 'normal'
+            else:
+                #textbox.do_command(ch)
+                stdscr.refresh()
+        else:
+            if ch == ord('r'):
+                deck = SlideDeck(args.file)
+            elif ch == ord('j') or ch == 32:
+                deck.next()
+                th.kill()
+            elif ch == ord('k') or ch == 8:
+                deck.prev()
+                th.kill()
+            elif ch == ESCAPE:
+                break
+
+    window.join()
+    curses.nocbreak(); stdscr.keypad(0); curses.echo()
+    curses.endwin()
 
 if __name__ == '__main__':
     main()
