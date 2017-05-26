@@ -15,23 +15,34 @@ class SlideDec:
             documents = yaml.load_all(stream)
             self._documents = [ doc for doc in documents ]
             if self.page is None:
-                self.page = 0
+                self.page = 1
 
     def __len__(self):
         return len(self._documents)
+
+    def header(self):
+        assert len(self._documents) >= 1
+        return self._documents[0]
 
     def document(self, page=None):
         if page is None:
             page = self.page()
         slide = self.slide(page)
 
-
+    def show(self, page=None):
+        page = page or self.page(page) 
+        subprocess.Popen('plugins/{plugin} {xid}'.format(plugin=plugin, xid=xid))
+      
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument('-e', required=True)
     parser.add_argument('slides')
     args = parser.parse_args()
     slides = SlideDeck(args.slides)
+    
+    
+    
 
 if __name__ == '__main__':
     main()
